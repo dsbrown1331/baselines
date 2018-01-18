@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # noinspection PyUnresolvedReferences
-import mujoco_py # Mujoco must come before other imports. https://openai.slack.com/archives/C1H6P3R7B/p1492828680631850
+#import mujoco_py # Mujoco must come before other imports. https://openai.slack.com/archives/C1H6P3R7B/p1492828680631850
 from mpi4py import MPI
 from baselines.common import set_global_seeds
 import os.path as osp
-import gym
+import gym, roboschool
 import logging
 from baselines import logger
 from baselines.ppo1.mlp_policy import MlpPolicy
@@ -21,9 +21,22 @@ def train(env_id, num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     if rank != 0:
         logger.set_level(logger.DISABLED)
+    import numpy as np
+    import colorsys
+    COLOR_SET = [ tuple(int(c*255) for c in colorsys.hsv_to_rgb(h/360.,1,1))
+                for h in range(0,360,20) ]
+
+    np.random.seed(0)
+    np.random.shuffle(COLOR_SET)
+    COLOR_SET = COLOR_SET[:4]
+
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
     env = gym.make(env_id)
+    env.unwrapped.set_goals( [0] )
+    env.unwrapped.set_targets_color( COLOR_SET )
+    env.unwrapped.set_sparse_reward()
+
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=env.observation_space, ac_space=env.action_space,
             hid_size=32, num_hid_layers=2)
@@ -39,7 +52,7 @@ def train(env_id, num_timesteps, seed):
 def main():
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--env', help='environment ID', default='Hopper-v1')
+    parser.add_argument('--env', help='environment ID', default='RoboschoolReacher-v1')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--num-timesteps', type=int, default=int(1e6))
     args = parser.parse_args()
