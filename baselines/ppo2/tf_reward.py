@@ -28,16 +28,18 @@ class ShuffleAndLearn(object):
     def load(self, model_file):
         self.net.load(self.sess,model_file)
 
-    def reward_fn(self, p_img, c_img):
+    def reward_fn(self, init_img, p_img, c_img):
         """
+        init_img: image at the beg.
         p_img: past image. image one frame before
         c_img: current image. image of current frame
         """
         logits = \
             self.sess.run(self.net.logits,
-                          feed_dict={self.x: p_img[None].astype(np.float32)/255.0, self.y: c_img[None].astype(np.float32)/255.0,
-                                     self.gt:np.array([1])})
-        return logits[0]
+                          feed_dict={self.x: np.repeat(init_img[None],2,axis=0).astype(np.float32)/255.0,
+                                     self.y: np.stack([p_img,c_img],axis=0).astype(np.float32)/255.0,
+                                     self.gt:np.array([1,1])})
+        return logits[1]-logits[0]
 
 
 if __name__ == "__main__":
@@ -55,5 +57,5 @@ if __name__ == "__main__":
 
     reward_fn = sal.reward_fn
     for _ in range(10):
-        print(reward_fn(np.random.rand(64,64,3),np.random.rand(64,64,3)))
+        print(reward_fn(np.random.rand(64,64,3),np.random.rand(64,64,3),np.random.rand(64,64,3)))
 

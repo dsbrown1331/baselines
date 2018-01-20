@@ -24,7 +24,10 @@ def train(env_id, num_timesteps, seed):
     from functools import partial
     sal = ShuffleAndLearn(tf.get_default_session())
     sal_load_fn = partial(sal.load,
-                          '/home/wonjoon/workspace/tcn-ppo/log/shffule-and-learn/2018-01-17 12:43:26/model.ckpt-8000')
+                          ### Shuffle and Learn trained with videos gathered by Maml Aligner.
+                          '/home/wonjoon/workspace/tcn-ppo/log/shffule-and-learn/2018-01-19 17:22:19/model.ckpt-10000')
+                          ### Shuffle and Learn trained with videos gathered by Pefrect Alignment -- New
+                          #'/home/wonjoon/workspace/tcn-ppo/log/shffule-and-learn/2018-01-18 21:12:41/model.ckpt-10000') #Good! Update 150. will work.
 
     def make_env():
         import numpy as np

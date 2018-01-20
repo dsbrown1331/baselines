@@ -62,7 +62,12 @@ def main():
     args = parser.parse_args()
 
     test(args.env, num_timesteps=args.num_timesteps, seed=args.seed,
-         model_path='/tmp/openai-2018-01-17-21-14-33-709102/checkpoints/00340')
+        model_path='/tmp/openai-2018-01-19-17-28-45-890769/checkpoints/00290')
+         #model_path='/tmp/openai-2018-01-18-23-15-38-650901/checkpoints/00150')
+         #model_path='/tmp/openai-2018-01-18-23-01-48-386512/checkpoints/00050')
+         #model_path='/tmp/openai-2018-01-18-21-15-14-733256/checkpoints/00050')
+         #model_path='/tmp/openai-2018-01-18-20-58-46-504336/checkpoints/00130')
+         #model_path='/tmp/openai-2018-01-17-21-14-33-709102/checkpoints/00340')
          #model_path='/tmp/openai-2018-01-16-21-13-42-297830/checkpoints/00100')
          #model_path='/tmp/openai-2018-01-16-20-46-52-719658/checkpoints/00220')
          #model_path='/tmp/openai-2018-01-16-20-27-25-798771/checkpoints/00150')
