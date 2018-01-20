@@ -25,7 +25,8 @@ def train(env_id, num_timesteps, seed):
     sal = ShuffleAndLearn(tf.get_default_session())
     sal_load_fn = partial(sal.load,
                           ### Shuffle and Learn trained with videos gathered by Maml Aligner.
-                          '/home/wonjoon/workspace/tcn-ppo/log/shffule-and-learn/2018-01-19 17:22:19/model.ckpt-10000')
+                          #'/home/wonjoon/workspace/tcn-ppo/log/shffule-and-learn/2018-01-19 17:22:19/model.ckpt-10000') #(Target Subtask 0) Good! Update ~150 will do. (more is beneficial)
+                          '/home/wonjoon/workspace/tcn-ppo/log/shffule-and-learn/2018-01-19 18:06:46/model.ckpt-10000') #(Target Subtask 1)
                           ### Shuffle and Learn trained with videos gathered by Pefrect Alignment -- New
                           #'/home/wonjoon/workspace/tcn-ppo/log/shffule-and-learn/2018-01-18 21:12:41/model.ckpt-10000') #Good! Update 150. will work.
 
@@ -40,7 +41,7 @@ def train(env_id, num_timesteps, seed):
         COLOR_SET = COLOR_SET[:4]
 
         env = gym.make(env_id)
-        env.unwrapped.set_goals( [0] )
+        env.unwrapped.set_goals( [1] )
         env.unwrapped.set_targets_color( COLOR_SET )
 
         # 1. Sparse Reward

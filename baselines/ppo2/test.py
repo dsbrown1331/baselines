@@ -62,8 +62,9 @@ def main():
     args = parser.parse_args()
 
     test(args.env, num_timesteps=args.num_timesteps, seed=args.seed,
-        model_path='/tmp/openai-2018-01-19-17-28-45-890769/checkpoints/00290')
-         #model_path='/tmp/openai-2018-01-18-23-15-38-650901/checkpoints/00150')
+         #model_path='/tmp/openai-2018-01-19-19-13-58-892638/checkpoints/00130') #00200 #00300
+         model_path='/tmp/openai-2018-01-19-17-28-45-890769/checkpoints/00290') #Maml Aligner ( target:0 )
+         #model_path='/tmp/openai-2018-01-18-23-15-38-650901/checkpoints/00150') #Perfect Aligner ( target: 0)
          #model_path='/tmp/openai-2018-01-18-23-01-48-386512/checkpoints/00050')
          #model_path='/tmp/openai-2018-01-18-21-15-14-733256/checkpoints/00050')
          #model_path='/tmp/openai-2018-01-18-20-58-46-504336/checkpoints/00130')
