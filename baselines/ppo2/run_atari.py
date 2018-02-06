@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 from baselines import logger
+from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.cmd_util import make_atari_env, atari_arg_parser
 from baselines.common.vec_env.vec_frame_stack import VecFrameStack
 from baselines.ppo2 import ppo2
@@ -26,15 +27,53 @@ def train(env_id, num_timesteps, seed, policy):
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,
         cliprange=lambda f : f * 0.1,
-        total_timesteps=int(num_timesteps * 1.1))
+        total_timesteps=int(num_timesteps * 1.1),
+        save_interval=1000)
+
+def test(env_id, seed, policy, model_path):
+    import os
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+    from gym import wrappers
+    ncpu = 1
+    config = tf.ConfigProto(allow_soft_placement=True,
+                            intra_op_parallelism_threads=ncpu,
+                            inter_op_parallelism_threads=ncpu)
+    config.gpu_options.allow_growth = True
+
+    sess = tf.Session(config=config)
+    with sess.as_default():
+        def make_env(): # pylint: disable=C0111
+            env = make_atari(env_id)
+            env.seed(seed)
+            env = wrappers.Monitor(env,logger.get_dir(),force=True)
+            return wrap_deepmind(env, clip_rewards=False, frame_stack=True)
+        env = make_env()
+        #env = VecFrameStack(make_env(), 4)
+
+        policy = {'cnn' : CnnPolicy, 'lstm' : LstmPolicy, 'lnlstm' : LnLstmPolicy}[policy]
+
+        ppo2.test(policy=policy, env=env, model_dir=model_path)
+    sess.close()
 
 def main():
+    from pathlib import Path
+    current_path = Path(__file__).parent
+
     parser = atari_arg_parser()
     parser.add_argument('--policy', help='Policy architecture', choices=['cnn', 'lstm', 'lnlstm'], default='cnn')
+    parser.add_argument('--model', help='Model for run a pretrained model', default=current_path/'models'/'pong'/'10000')
     args = parser.parse_args()
     logger.configure()
-    train(args.env, num_timesteps=args.num_timesteps, seed=args.seed,
-        policy=args.policy)
+
+    if args.model == '' :
+        train(args.env, num_timesteps=args.num_timesteps, seed=args.seed,
+            policy=args.policy)
+    else:
+        test(args.env,
+            seed=args.seed,
+            policy=args.policy,
+            model_path=args.model)
 
 if __name__ == '__main__':
     main()

@@ -72,7 +72,6 @@ class Model(object):
             for p, loaded_p in zip(params, loaded_params):
                 restores.append(p.assign(loaded_p))
             sess.run(restores)
-            # If you want to load weights, also save/load observation scaling inside VecNormalize
 
         self.train = train
         self.train_model = train_model
@@ -240,6 +239,31 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
             print('Saving to', savepath)
             model.save(savepath)
     env.close()
+
+def test(*, policy, env, model_dir):
+    ob_space = env.observation_space
+    ac_space = env.action_space
+
+    make_model = lambda : Model(policy=policy, ob_space=ob_space, ac_space=ac_space, nbatch_act=1, nbatch_train=1,
+                    nsteps=1, ent_coef=0.0, vf_coef=0.5,
+                    max_grad_norm=0.5)
+    model = make_model()
+    model.load(model_dir)
+    lstm_states = model.initial_state #not used if the policy is not lstm
+
+    done = False
+    total_r = 0.
+
+    obs = env.reset()
+    while(True):
+        a, _, _, _ = model.step(obs.__array__()[None], lstm_states, [done])
+
+        obs, r, done, info = env.step(a[0])
+        total_r += r
+
+        if( done ):
+            break
+    return total_r
 
 def safemean(xs):
     return np.nan if len(xs) == 0 else np.mean(xs)
