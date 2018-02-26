@@ -45,3 +45,23 @@ class VecNormalize(VecEnvWrapper):
         """
         obs = self.venv.reset()
         return self._obfilt(obs)
+
+    def save(self,loc):
+        s = {}
+        if( self.ret_rms ):
+            s['ret_rms'] = self.ret_rms
+        if( self.ob_rms ):
+            s['ob_rms'] = self.ob_rms
+
+        import pickle
+        with open(loc+'.env_stat.pkl', 'wb') as f :
+            pickle.dump(s,f)
+
+    def load(self,loc):
+        import pickle
+        with open(loc+'.env_stat.pkl', 'rb') as f :
+            s = pickle.load(f)
+        if( self.ret_rms ):
+            self.ret_rms = s['ret_rms']
+        if( self.ob_rms ):
+            self.ob_rms = s['ob_rms']

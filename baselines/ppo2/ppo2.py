@@ -238,6 +238,10 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
             savepath = osp.join(checkdir, '%.5i'%update)
             print('Saving to', savepath)
             model.save(savepath)
+
+            env_save = getattr(env, "save", None)
+            if callable(env_save):
+               env_save(savepath)
     env.close()
 
 def test(*, policy, env, model_dir):
@@ -249,6 +253,9 @@ def test(*, policy, env, model_dir):
                     max_grad_norm=0.5)
     model = make_model()
     model.load(model_dir)
+    env_load= getattr(env, "load", None)
+    if callable(env_load):
+        env_load(model_dir)
     lstm_states = model.initial_state #not used if the policy is not lstm
 
     done = False
@@ -256,9 +263,9 @@ def test(*, policy, env, model_dir):
 
     obs = env.reset()
     while(True):
-        a, _, _, _ = model.step(obs.__array__()[None], lstm_states, [done])
+        a, _, _, _ = model.step(obs.__array__(), lstm_states, [done])
 
-        obs, r, done, info = env.step(a[0])
+        obs, r, done, info = env.step(a)
         total_r += r
 
         if( done ):

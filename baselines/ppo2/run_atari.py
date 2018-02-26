@@ -3,6 +3,7 @@ import sys
 from baselines import logger
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.cmd_util import make_atari_env, atari_arg_parser
+from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_frame_stack import VecFrameStack
 from baselines.ppo2 import ppo2
 from baselines.ppo2.policies import CnnPolicy, LstmPolicy, LnLstmPolicy
@@ -47,9 +48,10 @@ def test(env_id, seed, policy, model_path):
             env = make_atari(env_id)
             env.seed(seed)
             env = wrappers.Monitor(env,logger.get_dir(),force=True)
-            return wrap_deepmind(env, clip_rewards=False, frame_stack=True)
-        env = make_env()
-        #env = VecFrameStack(make_env(), 4)
+            return wrap_deepmind(env, clip_rewards=False, frame_stack=False)
+        #env = make_env()
+        env = DummyVecEnv([make_env])
+        env = VecFrameStack(env, 4)
 
         policy = {'cnn' : CnnPolicy, 'lstm' : LstmPolicy, 'lnlstm' : LnLstmPolicy}[policy]
 
