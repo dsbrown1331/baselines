@@ -61,7 +61,7 @@ class VecNormalize(VecEnvWrapper):
         import pickle
         with open(loc+'.env_stat.pkl', 'rb') as f :
             s = pickle.load(f)
-        if( self.ret_rms ):
+        if 'ret_rms' in s:
             self.ret_rms = s['ret_rms']
-        if( self.ob_rms ):
+        if 'ob_rms' in s:
             self.ob_rms = s['ob_rms']

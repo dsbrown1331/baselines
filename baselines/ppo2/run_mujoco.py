@@ -21,8 +21,8 @@ def train(env_id, num_timesteps, seed):
         env = bench.Monitor(env, logger.get_dir())
         return env
     env = DummyVecEnv([make_env])
-    #env = VecNormalize(env)
-    env = VecNormalize(env,False,False) #normalize observ, normalize ret.
+    env = VecNormalize(env)
+    #env = VecNormalize(env,False,False) #normalize observ, normalize ret.
 
     set_global_seeds(seed)
     policy = MlpPolicy
@@ -53,7 +53,7 @@ def test(env_id, seed, model_path):
             return env
         #env = make_env()
         env = DummyVecEnv([make_env])
-        env = VecNormalize(env,False,False) #normalize observ, normalize ret.
+        env = VecNormalize(env)
 
         set_global_seeds(seed)
         policy = MlpPolicy
