@@ -9,9 +9,10 @@ from baselines.ppo2.policies import MlpPolicy
 import gym
 import tensorflow as tf
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
+from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 
 def train(env_id, num_timesteps, seed):
-    ncpu = 1
+    ncpu = 4
     config = tf.ConfigProto(allow_soft_placement=True,
                             intra_op_parallelism_threads=ncpu,
                             inter_op_parallelism_threads=ncpu)
@@ -20,7 +21,8 @@ def train(env_id, num_timesteps, seed):
         env = gym.make(env_id)
         env = bench.Monitor(env, logger.get_dir())
         return env
-    env = DummyVecEnv([make_env])
+    env = SubprocVecEnv([make_env for _ in range(ncpu)])
+    #env = DummyVecEnv([make_env])
     env = VecNormalize(env)
     #env = VecNormalize(env,False,False) #normalize observ, normalize ret.
 
@@ -29,7 +31,7 @@ def train(env_id, num_timesteps, seed):
     ppo2.learn(policy=policy, env=env, nsteps=2048, nminibatches=32,
         lam=0.95, gamma=0.99, noptepochs=10, log_interval=1,
         ent_coef=0.0,
-        lr=3e-4,
+        lr=1e-3,
         cliprange=0.2,
         total_timesteps=num_timesteps,
         save_interval=10)
