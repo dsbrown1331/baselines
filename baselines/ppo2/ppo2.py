@@ -39,8 +39,8 @@ class Model(object):
         approxkl = .5 * tf.reduce_mean(tf.square(neglogpac - OLDNEGLOGPAC))
         clipfrac = tf.reduce_mean(tf.to_float(tf.greater(tf.abs(ratio - 1.0), CLIPRANGE)))
         loss = pg_loss - entropy * ent_coef + vf_loss * vf_coef
-        with tf.variable_scope('model'):
-            params = tf.trainable_variables()
+        with tf.variable_scope('model') as model_scope:
+            params = tf.trainable_variables(model_scope.name)
         grads = tf.gradients(loss, params)
         if max_grad_norm is not None:
             grads, _grad_norm = tf.clip_by_global_norm(grads, max_grad_norm)
@@ -70,6 +70,7 @@ class Model(object):
             loaded_params = joblib.load(load_path)
             restores = []
             for p, loaded_p in zip(params, loaded_params):
+                #print(p,loaded_p.shape)
                 restores.append(p.assign(loaded_p))
             sess.run(restores)
 
