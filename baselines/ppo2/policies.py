@@ -117,10 +117,18 @@ class CnnPolicy(object):
         self.initial_state = None
 
         def step(ob, *_args, **_kwargs):
+            try:
+                sess
+            except NameError:
+                sess = tf.get_default_session()
             a, v, neglogp = sess.run([a0, vf, neglogp0], {X:ob})
             return a, v, self.initial_state, neglogp
 
         def value(ob, *_args, **_kwargs):
+            try:
+                sess
+            except NameError:
+                sess = tf.get_default_session()
             return sess.run(vf, {X:ob})
 
         self.X = X

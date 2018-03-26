@@ -56,6 +56,11 @@ class Model(object):
             if states is not None:
                 td_map[train_model.S] = states
                 td_map[train_model.M] = masks
+
+            try:
+                sess
+            except NameError:
+                sess = tf.get_default_session()
             return sess.run(
                 [pg_loss, vf_loss, entropy, approxkl, clipfrac, _train],
                 td_map
@@ -63,6 +68,10 @@ class Model(object):
         self.loss_names = ['policy_loss', 'value_loss', 'policy_entropy', 'approxkl', 'clipfrac']
 
         def save(save_path):
+            try:
+                sess
+            except NameError:
+                sess = tf.get_default_session()
             ps = sess.run(params)
             joblib.dump(ps, save_path)
 
@@ -72,7 +81,19 @@ class Model(object):
             for p, loaded_p in zip(params, loaded_params):
                 #print(p,loaded_p.shape)
                 restores.append(p.assign(loaded_p))
+
+            try:
+                sess
+            except NameError:
+                sess = tf.get_default_session()
             sess.run(restores)
+
+        def init_vars():
+            try:
+                sess
+            except NameError:
+                sess = tf.get_default_session()
+            tf.variables_initializer(params).run(session=sess) #pylint: disable=E1101
 
         self.train = train
         self.train_model = train_model
@@ -82,7 +103,10 @@ class Model(object):
         self.initial_state = act_model.initial_state
         self.save = save
         self.load = load
-        tf.global_variables_initializer().run(session=sess) #pylint: disable=E1101
+        if sess is not None:
+            tf.variables_initializer(tf.global_variables()).run(session=sess) #pylint: disable=E1101
+        else:
+            self.init_vars = init_vars
 
 class Runner(object):
 
