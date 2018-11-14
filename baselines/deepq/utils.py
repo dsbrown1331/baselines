@@ -1,23 +1,10 @@
-import os
-
-import tensorflow as tf
-
-# ================================================================
-# Saving variables
-# ================================================================
-
-def load_state(fname):
-    saver = tf.train.Saver()
-    saver.restore(tf.get_default_session(), fname)
-
-def save_state(fname):
-    os.makedirs(os.path.dirname(fname), exist_ok=True)
-    saver = tf.train.Saver()
-    saver.save(tf.get_default_session(), fname)
+from baselines.common.input import observation_input
+from baselines.common.tf_util import adjust_shape
 
 # ================================================================
 # Placeholders
 # ================================================================
+
 
 class TfInput(object):
     def __init__(self, name="(unnamed)"):
@@ -31,11 +18,11 @@ class TfInput(object):
         """Return the tf variable(s) representing the possibly postprocessed value
         of placeholder(s).
         """
-        raise NotImplemented()
+        raise NotImplementedError
 
     def make_feed_dict(data):
         """Given data input it to the placeholder(s)."""
-        raise NotImplemented()
+        raise NotImplementedError
 
 
 class PlaceholderTfInput(TfInput):
@@ -48,41 +35,25 @@ class PlaceholderTfInput(TfInput):
         return self._placeholder
 
     def make_feed_dict(self, data):
-        return {self._placeholder: data}
+        return {self._placeholder: adjust_shape(self._placeholder, data)}
 
-class BatchInput(PlaceholderTfInput):
-    def __init__(self, shape, dtype=tf.float32, name=None):
-        """Creates a placeholder for a batch of tensors of a given shape and dtype
 
-        Parameters
-        ----------
-        shape: [int]
-            shape of a single elemenet of the batch
-        dtype: tf.dtype
-            number representation used for tensor contents
-        name: str
-            name of the underlying placeholder
-        """
-        super().__init__(tf.placeholder(dtype, [None] + list(shape), name=name))
-
-class Uint8Input(PlaceholderTfInput):
-    def __init__(self, shape, name=None):
-        """Takes input in uint8 format which is cast to float32 and divided by 255
-        before passing it to the model.
-
-        On GPU this ensures lower data transfer times.
+class ObservationInput(PlaceholderTfInput):
+    def __init__(self, observation_space, name=None):
+        """Creates an input placeholder tailored to a specific observation space
 
         Parameters
         ----------
-        shape: [int]
-            shape of the tensor.
-        name: str
-            name of the underlying placeholder
-        """
 
-        super().__init__(tf.placeholder(tf.uint8, [None] + list(shape), name=name))
-        self._shape = shape
-        self._output = tf.cast(super().get(), tf.float32) / 255.0
+        observation_space:
+                observation space of the environment. Should be one of the gym.spaces types
+        name: str
+                tensorflow name of the underlying placeholder
+        """
+        inpt, self.processed_inpt = observation_input(observation_space, name=name)
+        super().__init__(inpt)
 
     def get(self):
-        return self._output
+        return self.processed_inpt
+
+
