@@ -76,8 +76,12 @@ class DummyVecEnv(VecEnv):
 
     def render(self, mode='human'):
         if self.num_envs == 1:
-            viewer = self.envs[0].env.env._get_viewer(mode)
-            if hasattr(viewer,'_ncam') and viewer._ncam >= 1:
+            try:
+                viewer = self.envs[0].env.env._get_viewer(mode)
+            except AttributeError:
+                viewer = None
+
+            if viewer and hasattr(viewer,'_ncam') and viewer._ncam >= 1:
                 from mujoco_py.generated import const
                 viewer.cam.fixedcamid = 0
                 viewer.cam.type = const.CAMERA_FIXED
