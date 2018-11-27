@@ -115,6 +115,18 @@ def build_env(args):
        if env_type == 'mujoco':
            env = VecNormalize(env)
 
+    if args.custom_reward != '':
+        from baselines.common.vec_env import VecEnv, VecEnvWrapper
+        import baselines.common.custom_reward_wrapper as W
+        assert isinstance(env,VecEnv) or isinstance(env,VecEnvWrapper)
+
+        if args.custom_reward == 'live_long':
+            env = W.VecLiveLongReward(env)
+        elif args.custom_reward == 'random_tf':
+            env = W.VecTFRandomReward(env)
+        else:
+            assert False, 'no such wrapper exist'
+
     return env
 
 
