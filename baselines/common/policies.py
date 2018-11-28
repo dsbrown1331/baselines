@@ -50,6 +50,7 @@ class PolicyWithValue(object):
 
         # Take an action
         self.action = self.pd.sample()
+        self.mode_action = self.pd.mode()
 
         # Calculate the neg log of our probability
         self.neglogp = self.pd.neglogp(self.action)
@@ -94,6 +95,10 @@ class PolicyWithValue(object):
         if state.size == 0:
             state = None
         return a, v, state, neglogp
+
+    def act(self, observation, **extra_feed):
+        a = self._evaluate(self.mode_action, observation, **extra_feed)
+        return a
 
     def value(self, ob, *args, **kwargs):
         """
