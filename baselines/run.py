@@ -125,6 +125,11 @@ def build_env(args):
             env = W.VecTFRandomReward(env,**custom_reward_kwargs)
         elif args.custom_reward == 'preference':
             env = W.VecTFPreferenceReward(env,**custom_reward_kwargs)
+        elif args.custom_reward == 'pytorch':
+            if args.custom_reward_path == '':
+                assert False, 'no path for reward model'
+            else:
+                env = W.VecPyTorchAtariReward(env, args.custom_reward_path)
         else:
             assert False, 'no such wrapper exist'
 

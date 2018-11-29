@@ -136,6 +136,7 @@ def common_arg_parser():
     parser.add_argument('--play', default=False, action='store_true')
     parser.add_argument('--custom_reward', default='')
     parser.add_argument('--custom_reward_kwargs', default='{}')
+    parser.add_argument('--custom_reward_path', default='')
     return parser
 
 def robotics_arg_parser():
