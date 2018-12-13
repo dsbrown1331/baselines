@@ -56,6 +56,31 @@ class FireResetEnv(gym.Wrapper):
     def step(self, ac):
         return self.env.step(ac)
 
+class LifeLossResetFireEnv(gym.Wrapper):
+    def __init__(self, env):
+        """Take action on reset and on life loss for environments that are fixed until firing."""
+        gym.Wrapper.__init__(self, env)
+        assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
+        assert len(env.unwrapped.get_action_meanings()) >= 3
+
+    def reset(self, **kwargs):
+        self.lives = self.env.unwrapped.ale.lives()
+        self.env.reset(**kwargs)
+        obs, _, done, _ = self.env.step(1)
+        if done:
+            self.env.reset(**kwargs)
+        obs, _, done, _ = self.env.step(2)
+        if done:
+            self.env.reset(**kwargs)
+        return obs
+
+    def step(self, ac):
+        lives = self.env.unwrapped.ale.lives()
+        if lives < self.lives and lives > 0:
+            self.lives = lives
+            return self.env.step(1)
+        return self.env.step(ac)
+
 class EpisodicLifeEnv(gym.Wrapper):
     def __init__(self, env):
         """Make end-of-life == end-of-episode, but only reset on true game over.
@@ -237,7 +262,8 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
     if episode_life:
         env = EpisodicLifeEnv(env)
     if 'FIRE' in env.unwrapped.get_action_meanings():
-        env = FireResetEnv(env)
+        #env = FireResetEnv(env)
+        env = LifeLossResetFireEnv(env)
     env = WarpFrame(env)
     if scale:
         env = ScaledFloatFrame(env)
@@ -246,4 +272,3 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
     if frame_stack:
         env = FrameStack(env, 4)
     return env
-
