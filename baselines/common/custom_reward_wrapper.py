@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 from baselines.common.vec_env import VecEnvWrapper
+from baselines.common.running_mean_std import RunningMeanStd
 
 import torch
 import torch.nn as nn
@@ -51,6 +52,11 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         self.reward_net.load_state_dict(torch.load(reward_net_path))
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.reward_net.to(self.device)
+
+        self.rew_rms = RunningMeanStd(shape=())
+        self.epsilon = 1e-8
+        self.cliprew = 10.
+
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
 ##Testing network to see why always giving zero rewards....
@@ -70,13 +76,15 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         with torch.no_grad():
             rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(self.device)).cpu().numpy().transpose()[0]
             #rews2= self.reward_net.cum_return(torch.from_numpy(np.array([rand_obs])).float().to(self.device)).cpu().numpy().transpose()[0]
+        self.rew_rms.update(rews_network)
+        r_hat = np.clip((r_hat - self.rew_rms.mean) / np.sqrt(self.rew_rms.var + self.epsilon), -self.cliprew, self.cliprew)
         #print(rews1)
         #   print(rews2)
 
         #print(obs.shape)
         # obs shape: [num_env,84,84,4] in case of atari games
 
-        return obs, rews_network, news, infos
+        return obs, r_hat, news, infos
 
     def reset(self, **kwargs):
         obs = self.venv.reset()
