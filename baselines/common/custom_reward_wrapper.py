@@ -15,10 +15,6 @@ class AtariNet(nn.Module):
         self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
         self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
         self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
-<<<<<<< HEAD
-        #self.fc1 = nn.Linear(1936, 64)
-=======
->>>>>>> 0792945dbdf53a474ac8add80939366dd5153090
         self.fc1 = nn.Linear(784, 64)
         self.fc2 = nn.Linear(64, 1)
 
