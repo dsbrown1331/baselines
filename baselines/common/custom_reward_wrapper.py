@@ -76,15 +76,15 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         with torch.no_grad():
             rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(self.device)).cpu().numpy().transpose()[0]
             #rews2= self.reward_net.cum_return(torch.from_numpy(np.array([rand_obs])).float().to(self.device)).cpu().numpy().transpose()[0]
-        self.rew_rms.update(rews_network)
-        r_hat = np.clip((r_hat - self.rew_rms.mean) / np.sqrt(self.rew_rms.var + self.epsilon), -self.cliprew, self.cliprew)
+        #self.rew_rms.update(rews_network)
+        #r_hat = np.clip((r_hat - self.rew_rms.mean) / np.sqrt(self.rew_rms.var + self.epsilon), -self.cliprew, self.cliprew)
         #print(rews1)
         #   print(rews2)
 
         #print(obs.shape)
         # obs shape: [num_env,84,84,4] in case of atari games
 
-        return obs, r_hat, news, infos
+        return obs, rews_network, news, infos
 
     def reset(self, **kwargs):
         obs = self.venv.reset()
