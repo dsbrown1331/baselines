@@ -45,6 +45,62 @@ class AtariNet(nn.Module):
         #print([self.cum_return(traj_i), self.cum_return(traj_j)])
         return torch.cat([self.cum_return(traj_i), self.cum_return(traj_j)])
 
+class VecRLplusIRLAtariReward(VecEnvWrapper):
+    def __init__(self, venv, reward_net_path, lambda):
+        VecEnvWrapper.__init__(self, venv)
+        self.reward_net = AtariNet()
+        self.reward_net.load_state_dict(torch.load(reward_net_path))
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.reward_net.to(self.device)
+
+        self.lambda = combo_param #how much weight to give to IRL verus RL combo_param \in [0,1] with 0 being RL and 1 being IRL
+        self.rew_rms = RunningMeanStd(shape=())
+        self.epsilon = 1e-8
+        self.cliprew = 10.
+
+    def step_wait(self):
+        obs, rews, news, infos = self.venv.step_wait()
+##Testing network to see why always giving zero rewards....
+        #import pickle
+        #filename = 'rand_obs.pkl'
+        #infile = open(filename,'rb')
+        #rand_obs = pickle.load(infile)
+        #infile.close()
+        traj = [obs / 255.0] #normalize!
+        #import matplotlib.pyplot as plt
+        #plt.figure(1)
+        #plt.imshow(obs[0,:,:,0])
+        #plt.figure(2)
+        #plt.imshow(rand_obs[0,:,:,0])
+        #plt.show()
+        #print(obs.shape)
+        with torch.no_grad():
+            rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(self.device)).cpu().numpy().transpose()[0]
+            #rews2= self.reward_net.cum_return(torch.from_numpy(np.array([rand_obs])).float().to(self.device)).cpu().numpy().transpose()[0]
+        #self.rew_rms.update(rews_network)
+        #r_hat = rews_network
+        #r_hat = np.clip((r_hat - self.rew_rms.mean) / np.sqrt(self.rew_rms.var + self.epsilon), -self.cliprew, self.cliprew)
+        #print(rews1)
+        #   print(rews2)
+
+        #print(obs.shape)
+        # obs shape: [num_env,84,84,4] in case of atari games
+
+        #combine IRL and RL rewards using lambda parameter like Yuke Zhu's paper "Reinforcement and Imitation Learningfor Diverse Visuomotor Skills"
+        reward_combo = self.lambda * rews_network + (1-self.lambda) * rews
+
+        return obs, , news, infos
+
+    def reset(self, **kwargs):
+        obs = self.venv.reset()
+
+        ##############
+        # If the reward is based on LSTM or something, then please reset internal state here.
+        ##############
+
+        return obs
+
+
 class VecPyTorchAtariReward(VecEnvWrapper):
     def __init__(self, venv, reward_net_path):
         VecEnvWrapper.__init__(self, venv)

@@ -137,6 +137,7 @@ def common_arg_parser():
     parser.add_argument('--custom_reward', default='')
     parser.add_argument('--custom_reward_kwargs', default='{}')
     parser.add_argument('--custom_reward_path', default='')
+    parser.add_argument('--custom_reward_lambda', default=0.5, type=float, help='convex combo weighting given to IRL verus RL')
     return parser
 
 def robotics_arg_parser():
