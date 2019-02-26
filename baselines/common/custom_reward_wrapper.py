@@ -46,7 +46,7 @@ class AtariNet(nn.Module):
         return torch.cat([self.cum_return(traj_i), self.cum_return(traj_j)])
 
 class VecRLplusIRLAtariReward(VecEnvWrapper):
-    def __init__(self, venv, reward_net_path, lambda):
+    def __init__(self, venv, reward_net_path, combo_param):
         VecEnvWrapper.__init__(self, venv)
         self.reward_net = AtariNet()
         self.reward_net.load_state_dict(torch.load(reward_net_path))
