@@ -53,7 +53,7 @@ class VecRLplusIRLAtariReward(VecEnvWrapper):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.reward_net.to(self.device)
 
-        self.lambda = combo_param #how much weight to give to IRL verus RL combo_param \in [0,1] with 0 being RL and 1 being IRL
+        self.lamda = combo_param #how much weight to give to IRL verus RL combo_param \in [0,1] with 0 being RL and 1 being IRL
         self.rew_rms = RunningMeanStd(shape=())
         self.epsilon = 1e-8
         self.cliprew = 10.
@@ -87,7 +87,7 @@ class VecRLplusIRLAtariReward(VecEnvWrapper):
         # obs shape: [num_env,84,84,4] in case of atari games
 
         #combine IRL and RL rewards using lambda parameter like Yuke Zhu's paper "Reinforcement and Imitation Learningfor Diverse Visuomotor Skills"
-        reward_combo = self.lambda * rews_network + (1-self.lambda) * rews
+        reward_combo = self.lamda * rews_network + (1-self.lamda) * rews
 
         return obs, , news, infos
 
