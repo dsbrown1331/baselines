@@ -89,7 +89,7 @@ class VecRLplusIRLAtariReward(VecEnvWrapper):
         #combine IRL and RL rewards using lambda parameter like Yuke Zhu's paper "Reinforcement and Imitation Learningfor Diverse Visuomotor Skills"
         reward_combo = self.lamda * rews_network + (1-self.lamda) * rews
 
-        return obs, , news, infos
+        return obs, reward_combo , news, infos
 
     def reset(self, **kwargs):
         obs = self.venv.reset()

@@ -129,7 +129,7 @@ def build_env(args):
             if args.custom_reward_path == '':
                 assert False, 'no path for reward model'
             else:
-                env = W.VecRLplusIRLAtariReward(env, args.custom_reward_path)
+                env = W.VecRLplusIRLAtariReward(env, args.custom_reward_path, args.custom_reward_lambda)
         elif args.custom_reward == 'pytorch':
             if args.custom_reward_path == '':
                 assert False, 'no path for reward model'
@@ -137,7 +137,7 @@ def build_env(args):
                 if args.custom_reward_lambda == '':
                     assert False, 'no combination parameter lambda'
                 else:
-                    env = W.VecPyTorchAtariReward(env, args.custom_reward_path, args.custom_reward_lambda)
+                    env = W.VecPyTorchAtariReward(env, args.custom_reward_path)
         else:
             assert False, 'no such wrapper exist'
 
