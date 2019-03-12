@@ -66,7 +66,7 @@ class VecRLplusIRLAtariReward(VecEnvWrapper):
         #infile = open(filename,'rb')
         #rand_obs = pickle.load(infile)
         #infile.close()
-        traj = [obs / 255.0] #normalize!
+        #traj = [obs / 255.0] #normalize!
         #import matplotlib.pyplot as plt
         #plt.figure(1)
         #plt.imshow(obs[0,:,:,0])
