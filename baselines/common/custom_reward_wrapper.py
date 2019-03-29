@@ -75,7 +75,7 @@ class VecRLplusIRLAtariReward(VecEnvWrapper):
         #plt.show()
         #print(obs.shape)
         with torch.no_grad():
-            rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(self.device)).cpu().numpy().transpose()[0]
+            rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(obs)).float().to(self.device)).cpu().numpy().transpose()[0]
             #rews2= self.reward_net.cum_return(torch.from_numpy(np.array([rand_obs])).float().to(self.device)).cpu().numpy().transpose()[0]
         #self.rew_rms.update(rews_network)
         #r_hat = rews_network
@@ -121,7 +121,7 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         #infile = open(filename,'rb')
         #rand_obs = pickle.load(infile)
         #infile.close()
-        traj = [obs / 255.0] #normalize!
+        #traj = [obs / 255.0] #normalize!
         #import matplotlib.pyplot as plt
         #plt.figure(1)
         #plt.imshow(obs[0,:,:,0])
@@ -130,7 +130,7 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         #plt.show()
         #print(obs.shape)
         with torch.no_grad():
-            rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(self.device)).cpu().numpy().transpose()[0]
+            rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(obs)).float().to(self.device)).cpu().numpy().transpose()[0]
             #rews2= self.reward_net.cum_return(torch.from_numpy(np.array([rand_obs])).float().to(self.device)).cpu().numpy().transpose()[0]
         #self.rew_rms.update(rews_network)
         #r_hat = rews_network
