@@ -31,7 +31,8 @@ class AtariNet(nn.Module):
             x = F.leaky_relu(self.conv4(x))
             x = x.view(-1, 784)
             x = F.leaky_relu(self.fc1(x))
-            r = torch.sigmoid(self.fc2(x)) #clip reward?
+            #r = torch.sigmoid(self.fc2(x)) #clip reward?
+            r = self.fc2(x) #clip reward?
             sum_rewards += r
         ##    y = self.scalar(torch.ones(1))
         ##    sum_rewards += y
@@ -117,9 +118,9 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         obs, rews, news, infos = self.venv.step_wait()
 
         #crop top of image
-        n = 10
+        #n = 10
         #no_score_obs = copy.deepcopy(obs)
-        obs[:,:n,:,:] = 0
+        #obs[:,:n,:,:] = 0
 
         with torch.no_grad():
             rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(obs)).float().to(self.device)).cpu().numpy().transpose()[0]
