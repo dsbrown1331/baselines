@@ -19,32 +19,19 @@ class AtariNet(nn.Module):
         self.fc2 = nn.Linear(64, 1)
 
 
-    def cum_return(self, traj):
+    def forward(self, traj):
         '''calculate cumulative return of trajectory'''
-        sum_rewards = 0
-        for x in traj:
-            x = x.permute(0,3,1,2) #get into NCHW format
-            #compute forward pass of reward network
-            x = F.leaky_relu(self.conv1(x))
-            x = F.leaky_relu(self.conv2(x))
-            x = F.leaky_relu(self.conv3(x))
-            x = F.leaky_relu(self.conv4(x))
-            x = x.view(-1, 784)
-            x = F.leaky_relu(self.fc1(x))
-            #r = torch.sigmoid(self.fc2(x)) #clip reward?
-            r = self.fc2(x) #clip reward?
-            sum_rewards += r
-        ##    y = self.scalar(torch.ones(1))
-        ##    sum_rewards += y
-        #print(sum_rewards)
-        return sum_rewards
-
-
-
-    def forward(self, traj_i, traj_j):
-        '''compute cumulative return for each trajectory and return logits'''
-        #print([self.cum_return(traj_i), self.cum_return(traj_j)])
-        return torch.cat([self.cum_return(traj_i), self.cum_return(traj_j)])
+        x = traj.permute(0,3,1,2) #get into NCHW format
+        #compute forward pass of reward network
+        x = F.leaky_relu(self.conv1(x))
+        x = F.leaky_relu(self.conv2(x))
+        x = F.leaky_relu(self.conv3(x))
+        x = F.leaky_relu(self.conv4(x))
+        x = x.view(-1, 784)
+        x = F.leaky_relu(self.fc1(x))
+        r = torch.sigmoid(self.fc2(x)) #clip reward?
+        #r = self.fc2(x) #clip reward?
+        return r
 
 class VecRLplusIRLAtariReward(VecEnvWrapper):
     def __init__(self, venv, reward_net_path, combo_param):
@@ -116,12 +103,20 @@ class VecPyTorchAtariReward(VecEnvWrapper):
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
-        traj = [obs] #normalize!
-        
-        with torch.no_grad():
-            rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(self.device)).cpu().numpy().transpose()[0]
-
         # obs shape: [num_env,84,84,4] in case of atari games
+
+        #crop off top of image
+        n = 10
+        #no_score_obs = copy.deepcopy(obs)
+        obs[:,:n,:,:] = 0
+
+        #Need to normalize for my reward function
+        normed_obs = obs / 255.0
+
+        #print(traj[0][0][40:60,:,:])
+
+        with torch.no_grad():
+            rews_network = self.reward_net.forward(torch.from_numpy(np.array(normed_obs)).float().to(self.device)).cpu().numpy().squeeze()
 
         return obs, rews_network, news, infos
 
