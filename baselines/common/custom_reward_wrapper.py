@@ -31,7 +31,8 @@ class AtariNet(nn.Module):
             x = F.leaky_relu(self.conv4(x))
             x = x.view(-1, 784)
             x = F.leaky_relu(self.fc1(x))
-            r = torch.sigmoid(self.fc2(x)) #clip reward?
+            #r = torch.sigmoid(self.fc2(x)) #clip reward?
+            r = self.fc2(x) #clip reward?
             sum_rewards += r
         ##    y = self.scalar(torch.ones(1))
         ##    sum_rewards += y
@@ -115,31 +116,11 @@ class VecPyTorchAtariReward(VecEnvWrapper):
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
-##Testing network to see why always giving zero rewards....
-        #import pickle
-        #filename = 'rand_obs.pkl'
-        #infile = open(filename,'rb')
-        #rand_obs = pickle.load(infile)
-        #infile.close()
         traj = [obs] #normalize!
-#        obs = [obs]
-        #import matplotlib.pyplot as plt
-        #plt.figure(1)
-        #plt.imshow(obs[0,:,:,0])
-        #plt.figure(2)
-        #plt.imshow(rand_obs[0,:,:,0])
-        #plt.show()
-        #print(obs.shape)
+        
         with torch.no_grad():
             rews_network = self.reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(self.device)).cpu().numpy().transpose()[0]
-            #rews2= self.reward_net.cum_return(torch.from_numpy(np.array([rand_obs])).float().to(self.device)).cpu().numpy().transpose()[0]
-        #self.rew_rms.update(rews_network)
-        #r_hat = rews_network
-        #r_hat = np.clip((r_hat - self.rew_rms.mean) / np.sqrt(self.rew_rms.var + self.epsilon), -self.cliprew, self.cliprew)
-        #print(rews1)
-        #   print(rews2)
 
-        #print(obs.shape)
         # obs shape: [num_env,84,84,4] in case of atari games
 
         return obs, rews_network, news, infos
