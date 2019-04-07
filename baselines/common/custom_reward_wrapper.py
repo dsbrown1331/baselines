@@ -29,8 +29,8 @@ class AtariNet(nn.Module):
         x = F.leaky_relu(self.conv4(x))
         x = x.view(-1, 784)
         x = F.leaky_relu(self.fc1(x))
-        r = torch.sigmoid(self.fc2(x)) #clip reward?
-        #r = self.fc2(x) #clip reward?
+        #r = torch.sigmoid(self.fc2(x)) #clip reward?
+        r = self.fc2(x) #clip reward?
         return r
 
 class VecRLplusIRLAtariReward(VecEnvWrapper):
