@@ -13,7 +13,7 @@ from baselines.common.tf_util import get_session
 from baselines import logger
 from importlib import import_module
 
-from baselines.common.vec_env.vec_normalize import VecNormalize
+from baselines.common.vec_env.vec_normalize import VecNormalize, VecNormalizeRewards
 
 try:
     from mpi4py import MPI
@@ -143,6 +143,10 @@ def build_env(args):
 
     if env_type == 'mujoco':
         env = VecNormalize(env)
+    if env_type == 'atari':
+        input("Normalizing for ATari game: okay? [Enter]")
+        #normalize rewards but not observations for atari
+        env = VecNormalizeRewards(env)
 
     return env
 
