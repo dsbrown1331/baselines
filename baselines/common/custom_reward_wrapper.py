@@ -43,7 +43,7 @@ class AtariNet(nn.Module):
         self.fc1 = nn.Linear(64 * 7 * 7, 512)
         self.output = nn.Linear(512, 1)
 
-    def foward(self, traj):
+    def forward(self, traj):
         '''calculate cumulative return of trajectory'''
         x = traj.permute(0,3,1,2) #get into NCHW format
         #compute forward pass of reward network
