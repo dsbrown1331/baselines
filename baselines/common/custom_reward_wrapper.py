@@ -7,31 +7,53 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class AtariNet(nn.Module):
-    def __init__(self):
+
+#Ibarz network
+# class AtariNet(nn.Module):
+#     def __init__(self):
+#         super().__init__()
+#
+#         self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
+#         self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
+#         self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
+#         self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
+#         self.fc1 = nn.Linear(784, 64)
+#         self.fc2 = nn.Linear(64, 1)
+#
+#
+#     def forward(self, traj):
+#         '''calculate cumulative return of trajectory'''
+#         x = traj.permute(0,3,1,2) #get into NCHW format
+#         #compute forward pass of reward network
+#         x = F.leaky_relu(self.conv1(x))
+#         x = F.leaky_relu(self.conv2(x))
+#         x = F.leaky_relu(self.conv3(x))
+#         x = F.leaky_relu(self.conv4(x))
+#         x = x.view(-1, 784)
+#         x = F.leaky_relu(self.fc1(x))
+#         #r = torch.sigmoid(self.fc2(x)) #clip reward?
+#         r = self.fc2(x) #clip reward?
+#         return r
+ class AtariNet(nn.Module):
         super().__init__()
+        self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc1 = nn.Linear(64 * 7 * 7, 512)
+        self.output = nn.Linear(512, 1)
 
-        self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
-        self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
-        self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
-        self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
-        self.fc1 = nn.Linear(784, 64)
-        self.fc2 = nn.Linear(64, 1)
-
-
-    def forward(self, traj):
+    def foward(self, traj):
         '''calculate cumulative return of trajectory'''
         x = traj.permute(0,3,1,2) #get into NCHW format
         #compute forward pass of reward network
-        x = F.leaky_relu(self.conv1(x))
-        x = F.leaky_relu(self.conv2(x))
-        x = F.leaky_relu(self.conv3(x))
-        x = F.leaky_relu(self.conv4(x))
-        x = x.view(-1, 784)
-        x = F.leaky_relu(self.fc1(x))
-        #r = torch.sigmoid(self.fc2(x)) #clip reward?
-        r = self.fc2(x) #clip reward?
+        conv1_output = F.relu(self.conv1(x))
+        conv2_output = F.relu(self.conv2(conv1_output))
+        conv3_output = F.relu(self.conv3(conv2_output))
+        fc1_output = F.relu(self.fc1(conv3_output.view(conv3_output.size(0),-1)))
+        r = self.output(fc1_output)
         return r
+
+
 
 class VecRLplusIRLAtariReward(VecEnvWrapper):
     def __init__(self, venv, reward_net_path, combo_param):

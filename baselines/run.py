@@ -143,10 +143,10 @@ def build_env(args):
 
     if env_type == 'mujoco':
         env = VecNormalize(env)
-    if env_type == 'atari':
-        input("Normalizing for ATari game: okay? [Enter]")
-        #normalize rewards but not observations for atari
-        env = VecNormalizeRewards(env)
+    # if env_type == 'atari':
+    #     input("Normalizing for ATari game: okay? [Enter]")
+    #     #normalize rewards but not observations for atari
+    #     env = VecNormalizeRewards(env)
 
     return env
 
