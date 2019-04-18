@@ -3,7 +3,7 @@ import numpy as np
 from baselines.common.vec_env import VecEnvWrapper
 from baselines.common.running_mean_std import RunningMeanStd
 from baselines.common.trex_utils import preprocess
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -130,8 +130,8 @@ class VecPyTorchAtariReward(VecEnvWrapper):
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
         # obs shape: [num_env,84,84,4] in case of atari games
-        plt.subplot(1,2,1)
-        plt.imshow(obs[0][:,:,0])
+        #plt.subplot(1,2,1)
+        #plt.imshow(obs[0][:,:,0])
         #crop off top of image
         #n = 10
         #no_score_obs = copy.deepcopy(obs)
@@ -141,9 +141,9 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         #normed_obs = obs / 255.0
         #mask and normalize for input to network
         normed_obs = preprocess(obs, self.env_name)
-        plt.subplot(1,2,2)
-        plt.imshow(normed_obs[0][:,:,0])
-        plt.show()
+        #plt.subplot(1,2,2)
+        #plt.imshow(normed_obs[0][:,:,0])
+        #plt.show()
         #print(traj[0][0][40:60,:,:])
 
         with torch.no_grad():

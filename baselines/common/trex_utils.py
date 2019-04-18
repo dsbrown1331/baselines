@@ -45,5 +45,5 @@ def mask_score(obs, env_name):
     return obs_copy
 
 def preprocess(ob, env_name):
-    print("masking on env", env_name)
+    #print("masking on env", env_name)
     return mask_score(normalize_state(ob), env_name)
