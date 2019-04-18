@@ -2,6 +2,8 @@ import gym
 import numpy as np
 from baselines.common.vec_env import VecEnvWrapper
 from baselines.common.running_mean_std import RunningMeanStd
+from baselines.common.trex_utils import preprocess
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -9,50 +11,50 @@ import torch.nn.functional as F
 
 
 #Ibarz network
-# class AtariNet(nn.Module):
-#     def __init__(self):
-#         super().__init__()
-#
-#         self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
-#         self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
-#         self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
-#         self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
-#         self.fc1 = nn.Linear(784, 64)
-#         self.fc2 = nn.Linear(64, 1)
-#
-#
-#     def forward(self, traj):
-#         '''calculate cumulative return of trajectory'''
-#         x = traj.permute(0,3,1,2) #get into NCHW format
-#         #compute forward pass of reward network
-#         x = F.leaky_relu(self.conv1(x))
-#         x = F.leaky_relu(self.conv2(x))
-#         x = F.leaky_relu(self.conv3(x))
-#         x = F.leaky_relu(self.conv4(x))
-#         x = x.view(-1, 784)
-#         x = F.leaky_relu(self.fc1(x))
-#         #r = torch.sigmoid(self.fc2(x)) #clip reward?
-#         r = self.fc2(x) #clip reward?
-#         return r
 class AtariNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc1 = nn.Linear(64 * 7 * 7, 512)
-        self.output = nn.Linear(512, 1)
+
+        self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
+        self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
+        self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
+        self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
+        self.fc1 = nn.Linear(784, 64)
+        self.fc2 = nn.Linear(64, 1)
+
 
     def forward(self, traj):
         '''calculate cumulative return of trajectory'''
         x = traj.permute(0,3,1,2) #get into NCHW format
         #compute forward pass of reward network
-        conv1_output = F.relu(self.conv1(x))
-        conv2_output = F.relu(self.conv2(conv1_output))
-        conv3_output = F.relu(self.conv3(conv2_output))
-        fc1_output = F.relu(self.fc1(conv3_output.view(conv3_output.size(0),-1)))
-        r = self.output(fc1_output)
+        x = F.leaky_relu(self.conv1(x))
+        x = F.leaky_relu(self.conv2(x))
+        x = F.leaky_relu(self.conv3(x))
+        x = F.leaky_relu(self.conv4(x))
+        x = x.view(-1, 784)
+        x = F.leaky_relu(self.fc1(x))
+        #r = torch.sigmoid(self.fc2(x)) #clip reward?
+        r = self.fc2(x) #clip reward?
         return r
+# class AtariNet(nn.Module):
+#     def __init__(self):
+#         super().__init__()
+#         self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4)
+#         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+#         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+#         self.fc1 = nn.Linear(64 * 7 * 7, 512)
+#         self.output = nn.Linear(512, 1)
+#
+#     def forward(self, traj):
+#         '''calculate cumulative return of trajectory'''
+#         x = traj.permute(0,3,1,2) #get into NCHW format
+#         #compute forward pass of reward network
+#         conv1_output = F.relu(self.conv1(x))
+#         conv2_output = F.relu(self.conv2(conv1_output))
+#         conv3_output = F.relu(self.conv3(conv2_output))
+#         fc1_output = F.relu(self.fc1(conv3_output.view(conv3_output.size(0),-1)))
+#         r = self.output(fc1_output)
+#         return r
 
 
 
@@ -113,7 +115,7 @@ class VecRLplusIRLAtariReward(VecEnvWrapper):
 
 
 class VecPyTorchAtariReward(VecEnvWrapper):
-    def __init__(self, venv, reward_net_path):
+    def __init__(self, venv, reward_net_path, env_name):
         VecEnvWrapper.__init__(self, venv)
         self.reward_net = AtariNet()
         self.reward_net.load_state_dict(torch.load(reward_net_path))
@@ -123,19 +125,25 @@ class VecPyTorchAtariReward(VecEnvWrapper):
         self.rew_rms = RunningMeanStd(shape=())
         self.epsilon = 1e-8
         self.cliprew = 10.
+        self.env_name = env_name
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
         # obs shape: [num_env,84,84,4] in case of atari games
-
+        plt.subplot(1,2,1)
+        plt.imshow(obs[0][:,:,0])
         #crop off top of image
-        n = 10
+        #n = 10
         #no_score_obs = copy.deepcopy(obs)
-        obs[:,:n,:,:] = 0
+        #obs[:,:n,:,:] = 0
 
         #Need to normalize for my reward function
-        normed_obs = obs / 255.0
-
+        #normed_obs = obs / 255.0
+        #mask and normalize for input to network
+        normed_obs = preprocess(obs, self.env_name)
+        plt.subplot(1,2,2)
+        plt.imshow(normed_obs[0][:,:,0])
+        plt.show()
         #print(traj[0][0][40:60,:,:])
 
         with torch.no_grad():

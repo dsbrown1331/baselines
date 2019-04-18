@@ -93,6 +93,12 @@ def build_env(args):
 
     env_type, env_id = get_env_type(args.env)
 
+    print(env_id)
+    #extract the agc_env_name
+    noskip_idx = env_id.find("NoFrameskip")
+    env_name = env_id[:noskip_idx].lower()
+    print("Env Name for Masking:", env_name)
+
     if env_type in {'atari', 'retro'}:
         if alg == 'deepq':
             env = make_env(env_id, env_type, seed=seed, wrapper_kwargs={'frame_stack': True})
@@ -129,15 +135,15 @@ def build_env(args):
             if args.custom_reward_path == '':
                 assert False, 'no path for reward model'
             else:
-                env = W.VecRLplusIRLAtariReward(env, args.custom_reward_path, args.custom_reward_lambda)
+                if args.custom_reward_lambda == '':
+                    assert False, 'no combination parameter lambda'
+                else:
+                    env = W.VecRLplusIRLAtariReward(env, args.custom_reward_path, args.custom_reward_lambda)
         elif args.custom_reward == 'pytorch':
             if args.custom_reward_path == '':
                 assert False, 'no path for reward model'
             else:
-                if args.custom_reward_lambda == '':
-                    assert False, 'no combination parameter lambda'
-                else:
-                    env = W.VecPyTorchAtariReward(env, args.custom_reward_path)
+                env = W.VecPyTorchAtariReward(env, args.custom_reward_path, env_name)
         else:
             assert False, 'no such wrapper exist'
 
