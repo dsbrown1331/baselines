@@ -36,7 +36,15 @@ def mask_score(obs, env_name):
         obs_copy[:,:n_top,:,:] = 0
         obs_copy[:,-n_bottom:,:,:] = 0
         #cuts out divers and oxygen
-
+    elif env_name == "mspacman":
+        n_bottom = 15 #mask score and number lives left
+        obs_copy[:,-n_bottom:,:,:] = 0
+    elif env_name == "videopinball":
+        n_top = 15
+        obs_copy[:,:n_top,:,:] = 0
+    elif env_name == "montezumarevenge":
+        n_top = 10
+        obs_copy[:,:n_top,:,:] = 0
     else:
         print("NOT MASKING SCORE FOR GAME: " + env_name)
         pass
