@@ -11,13 +11,13 @@ def mask_score(obs, env_name):
         #no_score_obs = copy.deepcopy(obs)
         obs_copy[:,:n,:,:] = 0
     elif env_name == "beamrider":
-        n_top = 8#16
-        #n_bottom = 11
+        n_top = 16
+        n_bottom = 11
         obs_copy[:,:n_top,:,:] = 0
-        #obs_copy[:,-n_bottom:,:,:] = 0
+        obs_copy[:,-n_bottom:,:,:] = 0
     elif env_name == "enduro":
         n_top = 0
-        n_bottom = 20
+        n_bottom = 14
         obs_copy[:,:n_top,:,:] = 0
         obs_copy[:,-n_bottom:,:,:] = 0
     elif env_name == "hero":
