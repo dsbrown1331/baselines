@@ -12,20 +12,21 @@ from tqdm import tqdm
 import numpy as np
 import gym
 
-from baselines.gail import mlp_policy
+from baselines.gail import cnn_policy
 from baselines.common import set_global_seeds, tf_util as U
 from baselines.common.misc_util import boolean_flag
+from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines import bench
 from baselines import logger
-from baselines.gail.dataset.mujoco_dset import Mujoco_Dset
-from baselines.gail.adversary import TransitionClassifier
+from baselines.gail.dataset.atari_dset import Atari_Dset
+from baselines.gail.adversary_atari import TransitionClassifier
 
 
 def argsparser():
     parser = argparse.ArgumentParser("Tensorflow Implementation of GAIL")
-    parser.add_argument('--env_id', help='environment ID', default='Hopper-v2')
+    parser.add_argument('--env_id', help='environment ID', default='BreakoutNoFrameskip-v4')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
-    parser.add_argument('--expert_path', type=str, default='data/deterministic.trpo.Hopper.0.00.npz')
+    parser.add_argument('--expert_path', type=str, default='data/breakout')
     parser.add_argument('--log_dir', help='the directory to save log file', default='log')
     parser.add_argument('--load_model_path', help='if provided, load the model', type=str, default=None)
     # Task
@@ -38,9 +39,6 @@ def argsparser():
     # Optimization Configuration
     parser.add_argument('--g_step', help='number of steps to train policy in each epoch', type=int, default=3)
     parser.add_argument('--d_step', help='number of steps to train discriminator in each epoch', type=int, default=1)
-    # Network Configuration (Using MLP Policy)
-    parser.add_argument('--policy_hidden_size', type=int, default=100)
-    parser.add_argument('--adversary_hidden_size', type=int, default=100)
     # Algorithms Configuration
     parser.add_argument('--algo', type=str, choices=['trpo', 'ppo'], default='trpo')
     parser.add_argument('--max_kl', type=float, default=0.01)
@@ -71,11 +69,12 @@ def get_task_name(args):
 def main(args):
     U.make_session(num_cpu=1).__enter__()
     set_global_seeds(args.seed)
-    env = gym.make(args.env_id)
+
+    env = wrap_deepmind(make_atari(args.env_id),episode_life=False,clip_rewards=False,frame_stack=True,scale=False)
 
     def policy_fn(name, ob_space, ac_space, reuse=False):
-        return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-                                    reuse=reuse, hid_size=args.policy_hidden_size, num_hid_layers=2)
+        return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space,kind='large',
+                                    reuse=reuse)
     if args.task == 'train':
         env = bench.Monitor(env, logger.get_dir() and
                             osp.join(logger.get_dir(), "monitor.json"))
@@ -90,8 +89,8 @@ def main(args):
         args.checkpoint_dir = osp.join(args.log_dir, 'chckpts')
         os.makedirs(args.checkpoint_dir, exist_ok=True)
 
-        dataset = Mujoco_Dset(expert_path=args.expert_path, traj_limitation=args.traj_limitation)
-        reward_giver = TransitionClassifier(env, args.adversary_hidden_size, entcoeff=args.adversary_entcoeff)
+        dataset = Atari_Dset(expert_path=args.expert_path, traj_limitation=args.traj_limitation)
+        reward_giver = TransitionClassifier(env, entcoeff=args.adversary_entcoeff)
         train(env,
               args.seed,
               policy_fn,
@@ -114,7 +113,7 @@ def main(args):
                policy_fn,
                args.load_model_path,
                timesteps_per_batch=1024,
-               number_trajs=10,
+               number_trajs=25,
                stochastic_policy=args.stochastic_policy,
                save=args.save_sample
                )
@@ -179,15 +178,13 @@ def runner(env, policy_func, load_model_path, timesteps_per_batch, number_trajs,
     acs_list = []
     len_list = []
     ret_list = []
-    max_x_pos_list = []
     for _ in tqdm(range(number_trajs)):
-        traj, max_x_pos = traj_1_generator(pi, env, timesteps_per_batch, stochastic=stochastic_policy)
+        traj = traj_1_generator(pi, env, timesteps_per_batch, stochastic=stochastic_policy)
         obs, acs, ep_len, ep_ret = traj['ob'], traj['ac'], traj['ep_len'], traj['ep_ret']
         obs_list.append(obs)
         acs_list.append(acs)
         len_list.append(ep_len)
         ret_list.append(ep_ret)
-        max_x_pos_list.append(max_x_pos)
     if stochastic_policy:
         print('stochastic policy:')
     else:
@@ -198,10 +195,8 @@ def runner(env, policy_func, load_model_path, timesteps_per_batch, number_trajs,
                  lens=np.array(len_list), rets=np.array(ret_list))
     avg_len = sum(len_list)/len(len_list)
     avg_ret = sum(ret_list)/len(ret_list)
-    avg_max_x_pos = np.mean(max_x_pos_list)
     print("Average length:", avg_len)
     print("Average return:", avg_ret)
-    print("Average max_x_pos:", avg_max_x_pos)
     return avg_len, avg_ret
 
 
@@ -221,7 +216,6 @@ def traj_1_generator(pi, env, horizon, stochastic):
     rews = []
     news = []
     acs = []
-    x_pos = []
 
     while True:
         ac, vpred = pi.act(stochastic, ob)
@@ -230,7 +224,6 @@ def traj_1_generator(pi, env, horizon, stochastic):
         acs.append(ac)
 
         ob, rew, new, _ = env.step(ac)
-        x_pos.append(env.unwrapped.sim.data.qpos[0])
         rews.append(rew)
 
         cur_ep_ret += rew
@@ -245,7 +238,7 @@ def traj_1_generator(pi, env, horizon, stochastic):
     acs = np.array(acs)
     traj = {"ob": obs, "rew": rews, "new": news, "ac": acs,
             "ep_ret": cur_ep_ret, "ep_len": cur_ep_len}
-    return traj, x_pos[-1]
+    return traj
 
 
 if __name__ == '__main__':
