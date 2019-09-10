@@ -144,8 +144,14 @@ def build_env(args):
                 assert False, 'no path for reward model'
             else:
                 env = W.VecPyTorchAtariReward(env, args.custom_reward_path, env_name)
+        elif args.custom_reward == "mcmc_mean":
+            if args.custom_reward_path == '' or args.mcmc_chain_path == '':
+                assert False, 'no path for reward model and/or chain_path'
+            else:
+                env = W.VecMCMCMeanAtariReward(env, args.custom_reward_path, args.mcmc_chain_path, env_name)
         else:
             assert False, 'no such wrapper exist'
+
 
     if env_type == 'mujoco':
         env = VecNormalize(env)
