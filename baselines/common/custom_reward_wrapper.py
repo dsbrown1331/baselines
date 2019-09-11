@@ -194,12 +194,24 @@ class VecMCMCMeanAtariReward(VecEnvWrapper):
         new_bias = torch.from_numpy(np.array([mean_weight[-1]]))
         print("new bias", new_bias)
         with torch.no_grad():
-            linear, bias =  last_layer.parameters()
-            linear = new_linear
-            bias = new_bias
+            #unsqueeze since nn.Linear wants a 2-d tensor for weights
+            new_linear = new_linear.unsqueeze(0)
+            print("new linear", new_linear)
+            print("new bias", new_bias)
+            with torch.no_grad():
+                #print(last_layer.weight)
+                #print(last_layer.bias)
+                #print(last_layer.weight.data)
+                #print(last_layer.bias.data)
+                last_layer.weight.data = new_linear.to(device)
+                last_layer.bias.data = new_bias.to(device)
 
             #TODO: print out last layer to make sure it stuck...
-            print("network last layer weights", torch.cat((linear.squeeze(), bias)).cpu().numpy())
+            print("printing out the new weights")
+            with torch.no_grad():
+                for param in self.reward_net.fc2.parameters():
+                    print(param)
+
         self.reward_net.to(self.device)
 
         self.rew_rms = RunningMeanStd(shape=())
