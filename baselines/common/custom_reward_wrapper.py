@@ -181,23 +181,23 @@ class VecMCMCMeanAtariReward(VecEnvWrapper):
                 np_line.append(float(s))
             data.append(np_line)
         data = np.array(data)
-        print(data[burn::skip,:].shape)
+        #print(data[burn::skip,:].shape)
 
         #get average across chain and use it as the last layer in the network
         mean_weight = np.mean(data[burn::skip,:], axis = 0)
-        print("mean weights", mean_weight[:-1])
-        print("mean bias", mean_weight[-1])
-        print(mean_weight.shape)
+        #print("mean weights", mean_weight[:-1])
+        #print("mean bias", mean_weight[-1])
+        #print(mean_weight.shape)
         last_layer = self.reward_net.fc2
         new_linear = torch.from_numpy(mean_weight[:-1])
-        print("new linear", new_linear)
+        #print("new linear", new_linear)
         new_bias = torch.from_numpy(np.array([mean_weight[-1]]))
-        print("new bias", new_bias)
+        #print("new bias", new_bias)
         with torch.no_grad():
             #unsqueeze since nn.Linear wants a 2-d tensor for weights
             new_linear = new_linear.unsqueeze(0)
-            print("new linear", new_linear)
-            print("new bias", new_bias)
+            #print("new linear", new_linear)
+            #print("new bias", new_bias)
             with torch.no_grad():
                 #print(last_layer.weight)
                 #print(last_layer.bias)
@@ -207,10 +207,10 @@ class VecMCMCMeanAtariReward(VecEnvWrapper):
                 last_layer.bias.data = new_bias.float().to(self.device)
 
             #TODO: print out last layer to make sure it stuck...
-            print("printing out the new weights")
-            with torch.no_grad():
-                for param in self.reward_net.fc2.parameters():
-                    print(param)
+            print("USING MEAN WEIGHTS FROM MCMC")
+            #with torch.no_grad():
+            #    for param in self.reward_net.fc2.parameters():
+            #        print(param)
 
         self.reward_net.to(self.device)
 
