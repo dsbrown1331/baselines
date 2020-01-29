@@ -137,7 +137,7 @@ class EmbeddingNet(nn.Module):
         self.fc_mu = nn.Linear(intermediate_dimension, self.ENCODING_DIMS)
 
         # This is the actual T-REX layer; linear comb. from self.ENCODING_DIMS
-        self.fc2 = nn.Linear(self.ENCODING_DIMS, 1, bias=False)
+        self.fc2 = nn.Linear(self.ENCODING_DIMS, 1)
 
 
     def forward(self, traj):
@@ -358,7 +358,8 @@ class VecMCMCMeanAtariReward(VecEnvWrapper):
         self.reward_net.fc2 = nn.Linear(embedding_dim, 1, bias=False) #last layer just outputs the scalar reward = w^T \phi(s)
 
         new_linear = torch.from_numpy(mean_weight[:-1])
-        #print("new linear", new_linear)
+        print("new linear", new_linear)
+        print(new_linear.size())
         with torch.no_grad():
             #unsqueeze since nn.Linear wants a 2-d tensor for weights
             new_linear = new_linear.unsqueeze(0)
