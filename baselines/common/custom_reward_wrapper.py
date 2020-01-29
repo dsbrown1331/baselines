@@ -143,14 +143,16 @@ class EmbeddingNet(nn.Module):
     def forward(self, traj):
         '''calculate cumulative return of trajectory'''
         x = traj.permute(0,3,1,2) #get into NCHW format
-        #compute forward pass of reward network
+        #compute forward pass of reward network (we parallelize across frames so batch size is length of partial trajectory)
         x = F.leaky_relu(self.conv1(x))
         x = F.leaky_relu(self.conv2(x))
         x = F.leaky_relu(self.conv3(x))
         x = F.leaky_relu(self.conv4(x))
         x = x.view(-1, 784)
         x = F.leaky_relu(self.fc1(x))
-        r = self.fc2(x) #clip reward?
+        mu = self.fc_mu(x)
+
+        r = self.fc2(mu)
         #r = self.fc2(x) #clip reward?
         return r
 
