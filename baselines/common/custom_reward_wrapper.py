@@ -369,7 +369,7 @@ class VecMCMCMeanAtariReward(VecEnvWrapper):
                 #print(last_layer.bias)
                 #print(last_layer.weight.data)
                 #print(last_layer.bias.data)
-                last_layer.weight.data = new_linear.float().to(self.device)
+                self.reward_net.fc2.weight.data = new_linear.float().to(self.device)
 
             #TODO: print out last layer to make sure it stuck...
             print("USING MEAN WEIGHTS FROM MCMC")
