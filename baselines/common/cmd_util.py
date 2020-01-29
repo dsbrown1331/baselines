@@ -22,9 +22,11 @@ def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_ind
     """
     Create a wrapped, monitored SubprocVecEnv for Atari and MuJoCo.
     """
+    print("making vec env")
     if wrapper_kwargs is None: wrapper_kwargs = {}
     mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     seed = seed + 10000 * mpi_rank if seed is not None else None
+
     def make_thunk(rank):
         return lambda: make_env(
             env_id=env_id,
@@ -38,8 +40,10 @@ def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_ind
 
     set_global_seeds(seed)
     if num_env > 1:
+        print("making subprocvecenv")
         return SubprocVecEnv([make_thunk(i + start_index) for i in range(num_env)])
     else:
+        print("dummy vec")
         return DummyVecEnv([make_thunk(start_index)])
 
 
@@ -52,8 +56,10 @@ def make_env(env_id, env_type, subrank=0, seed=None, reward_scale=1.0, gamestate
         gamestate = gamestate or retro.State.DEFAULT
         env = retro_wrappers.make_retro(game=env_id, max_episode_steps=10000, use_restricted_actions=retro.Actions.DISCRETE, state=gamestate)
     else:
+        print("making env")
+        print(env_id)
         env = gym.make(env_id)
-
+        print("made gym env")
     env.seed(seed + subrank if seed is not None else None)
     env = Monitor(env,
                   logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
@@ -138,6 +144,7 @@ def common_arg_parser():
     parser.add_argument('--custom_reward_kwargs', default='{}')
     parser.add_argument('--custom_reward_path', default='', help = "file with the pretrained weights from T-REX")
     parser.add_argument('--mcmc_chain_path', default='', help="file with all the weights from mcmc chain")
+    parser.add_argument('--embedding_dim', default=200, type=int, help="dimension of the embedding")
     parser.add_argument('--custom_reward_lambda', default=0.5, type=float, help='convex combo weighting given to IRL verus RL')
     return parser
 

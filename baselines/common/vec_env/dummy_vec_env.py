@@ -42,6 +42,8 @@ class DummyVecEnv(VecEnv):
             assert self.num_envs == 1, "actions {} is either not a list or has a wrong size - cannot match to {} environments".format(actions, self.num_envs)
             self.actions = [actions]
 
+        self.last_actions = actions
+
     def step_wait(self):
         for e in range(self.num_envs):
             action = self.actions[e]

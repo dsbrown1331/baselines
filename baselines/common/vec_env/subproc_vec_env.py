@@ -64,6 +64,7 @@ class SubprocVecEnv(VecEnv):
         for remote, action in zip(self.remotes, actions):
             remote.send(('step', action))
         self.waiting = True
+        self.last_actions = actions
 
     def step_wait(self):
         self._assert_not_closed()
