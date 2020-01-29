@@ -357,7 +357,7 @@ class VecMCMCMeanAtariReward(VecEnvWrapper):
         #print(mean_weight.shape)
         self.reward_net.fc2 = nn.Linear(embedding_dim, 1, bias=False) #last layer just outputs the scalar reward = w^T \phi(s)
 
-        new_linear = torch.from_numpy(mean_weight[:-1])
+        new_linear = torch.from_numpy(mean_weight)
         print("new linear", new_linear)
         print(new_linear.size())
         with torch.no_grad():
