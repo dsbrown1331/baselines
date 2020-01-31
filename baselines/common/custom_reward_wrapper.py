@@ -95,7 +95,7 @@ class AtariNet(nn.Module):
         self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
         self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
         self.fc1 = nn.Linear(784, 64)
-        self.fc2 = nn.Linear(64, 1)
+        self.fc2 = nn.Linear(64, 1, bias=False)
 
 
     def forward(self, traj):
