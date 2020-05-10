@@ -256,6 +256,34 @@ def make_atari(env_id, timelimit=True):
     env = MaxAndSkipEnv(env, skip=4)
     return env
 
+
+'''If repeat is true, then game repeats until timelimit is reached'''
+def make_fixed_horizon_atari(env_id, timelimit=True, repeat=True, fixed_horizon=False):
+    print("timelimit",timelimit)
+    # XXX(john): remove timelimit argument after gym is upgraded to allow double wrapping
+    env = gym.make(env_id)
+    print(dir(env))
+    print(type(env))
+    print(dir(env.unwrapped))
+    print(type(env.unwrapped))
+    print(env.unwrapped.frameskip)
+    print(env._max_episode_steps)
+    input()
+    if not timelimit:
+        env = env.env
+    else:
+        #set timelimit
+        env._max_episode_steps = 500 * 4
+        if fixed_horizon:
+            print('fixed_horizon', fixed_horizon)
+            input()
+            #make it repeat
+    assert 'NoFrameskip' in env.spec.id
+    env = NoopResetEnv(env, noop_max=30)
+    env = MaxAndSkipEnv(env, skip=4)
+    return env
+
+
 def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, scale=False):
     """Configure environment for DeepMind-style Atari.
     """

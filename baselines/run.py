@@ -33,6 +33,7 @@ except ImportError:
 _game_envs = defaultdict(set)
 for env in gym.envs.registry.all():
     # TODO: solve this with regexes
+
     env_type = env._entry_point.split(':')[0].split('.')[-1]
     _game_envs[env_type].add(env.id)
 
@@ -110,14 +111,16 @@ def build_env(args):
             env = VecFrameStack(env, frame_stack_size)
 
     else:
-       config = tf.ConfigProto(allow_soft_placement=True,
+        print("preconfig")
+        config = tf.ConfigProto(allow_soft_placement=True,
                                intra_op_parallelism_threads=1,
                                inter_op_parallelism_threads=1)
-       config.gpu_options.allow_growth = True
-       get_session(config=config)
-
-       env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale)
-
+        print("post config")
+        config.gpu_options.allow_growth = True
+        get_session(config=config)
+        print("got session")
+        env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale)
+        print("made env")
     if args.custom_reward != '':
         from baselines.common.vec_env import VecEnv, VecEnvWrapper
         import baselines.common.custom_reward_wrapper as W
@@ -143,17 +146,26 @@ def build_env(args):
             if args.custom_reward_path == '':
                 assert False, 'no path for reward model'
             else:
-                env = W.VecPyTorchAtariReward(env, args.custom_reward_path, env_name)
+                if env_type == "atari":
+                    env = W.VecPyTorchAtariReward(env, args.custom_reward_path, env_name)
+                elif env_type == "mujoco":
+                    env = W.VecPyTorchMujocoReward(env, args.custom_reward_path, env_name)
         elif args.custom_reward == "mcmc_mean":
             if args.custom_reward_path == '' or args.mcmc_chain_path == '':
                 assert False, 'no path for reward model and/or chain_path'
             else:
-                env = W.VecMCMCMeanAtariReward(env, args.custom_reward_path, args.mcmc_chain_path, env_name)
+                env = W.VecMCMCMeanAtariReward(env, args.custom_reward_path, args.mcmc_chain_path, args.embedding_dim, env_name)
+        elif args.custom_reward == "mcmc_map":
+            if args.custom_reward_path == '':
+                assert False, 'no path for reward model and/or chain_path'
+            else:
+                env = W.VecMCMCMAPAtariReward(env, args.custom_reward_path, args.embedding_dim, env_name)
         else:
             assert False, 'no such wrapper exist'
 
 
     if env_type == 'mujoco':
+        print("normalized environment")
         env = VecNormalize(env)
     # if env_type == 'atari':
     #     input("Normalizing for ATari game: okay? [Enter]")
