@@ -1,6 +1,11 @@
 import time
 import functools
 import tensorflow as tf
+import os.path as osp
+import os
+import time
+import numpy as np
+from collections import deque
 
 from baselines import logger
 
@@ -8,6 +13,10 @@ from baselines.common import set_global_seeds, explained_variance
 from baselines.common import tf_util
 from baselines.common.policies import build_policy
 
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
 
 from baselines.a2c.utils import Scheduler, find_trainable_variables
 from baselines.a2c.runner import Runner
@@ -129,6 +138,7 @@ def learn(
     alpha=0.99,
     gamma=0.99,
     log_interval=100,
+    save_interval=0,
     load_path=None,
     **network_kwargs):
 
@@ -172,6 +182,8 @@ def learn(
 
     gamma:              float, reward discounting parameter (default: 0.99)
 
+    save_interval: int                number of timesteps between saving events
+
     log_interval:       int, specifies how frequently the logs are printed out (default: 100)
 
     **network_kwargs:   keyword arguments to the policy / network builder. See baselines.common/policies.py/build_policy and arguments to a particular type of network
@@ -199,12 +211,19 @@ def learn(
     # Calculate the batch_size
     nbatch = nenvs*nsteps
 
+    epinfobuf = deque(maxlen=100)
+    
+
     # Start total timer
     tstart = time.time()
 
     for update in range(1, total_timesteps//nbatch+1):
         # Get mini batch of experiences
         obs, states, rewards, masks, actions, values = runner.run()
+        print(rewards)
+        input()
+
+        # epinfobuf.extend(epinfos)
 
         policy_loss, value_loss, policy_entropy = model.train(obs, states, rewards, masks, actions, values)
         nseconds = time.time()-tstart
@@ -221,6 +240,24 @@ def learn(
             logger.record_tabular("policy_entropy", float(policy_entropy))
             logger.record_tabular("value_loss", float(value_loss))
             logger.record_tabular("explained_variance", float(ev))
+            logger.record_tabular("mean_rewards", float(np.mean(rewards)))
+            # logger.logkv('eprewmean', safemean([epinfo['r'] for epinfo in epinfobuf]))
+            # logger.logkv('eplenmean', safemean([epinfo['l'] for epinfo in epinfobuf]))
+            
+            
             logger.dump_tabular()
+        if save_interval and (update % save_interval == 0 or update == 1) and logger.get_dir() and (MPI is None or MPI.COMM_WORLD.Get_rank() == 0):
+            checkdir = osp.join(logger.get_dir(), 'checkpoints')
+            os.makedirs(checkdir, exist_ok=True)
+            savepath = osp.join(checkdir, '%.5i'%update)
+            print('Saving to', savepath)
+            model.save(savepath)
+            try:
+                env.save(savepath)
+            except AttributeError:
+                pass
     return model
 
+# Avoid division error when calculate the mean (in our case if epinfo is empty returns np.nan, not return an error)
+def safemean(xs):
+    return np.nan if len(xs) == 0 else np.mean(xs)
