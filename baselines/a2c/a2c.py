@@ -220,8 +220,8 @@ def learn(
     for update in range(1, total_timesteps//nbatch+1):
         # Get mini batch of experiences
         obs, states, rewards, masks, actions, values = runner.run()
-        print(rewards)
-        input()
+        # print(rewards)
+        # input()
 
         # epinfobuf.extend(epinfos)
 
